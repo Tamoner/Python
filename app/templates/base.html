@@ -1,0 +1,64 @@
+<html>
+    <head>
+        {% if title %}
+        <title>{{ title }} - microblog</title>
+        {% else %}
+        <title>microblog</title>
+        {% endif %}
+    </head>
+    <body>
+        <div>
+          Microblog:
+          <a href="{{ url_for('index') }}">Home</a>
+          <a href="{{ url_for('explore') }}">Explore</a>
+          {% if current_user.is_anonymous %}
+          <a href="{{ url_for('login') }}">Login</a>
+          {% else %}
+          <a href="{{ url_for('user', username=current_user.username) }}">Profile</a>
+          <a href="{{ url_for('logout') }}">Logout</a>
+          {% endif %}
+        </div>
+        <hr>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </body>
+    <script>
+      function initialize_popovers() {
+        const popups = document.getElementsByClassName('user_popup');
+        for (let i = 0; i < popups.length; i++) {
+          const popover = new bootstrap.Popover(popups[i], {
+            content: 'Loading...',
+            trigger: 'hover focus',
+            placement: 'right',
+            html: true,
+            sanitize: false,
+            delay: {show: 500, hide: 0},
+            container: popups[i],
+            customClass: 'd-inline',
+          });
+          popups[i].addEventListener('show.bs.popover', async (ev) => {
+            if (ev.target.popupLoaded) {
+              return;
+            }
+            const response = await fetch('/user/' + ev.target.innerText.trim() + '/popup');
+            const data = await response.text();
+            const popover = bootstrap.Popover.getInstance(ev.target);
+            if (popover && data) {
+              ev.target.popupLoaded = true;
+              popover.setContent({'.popover-body': data});
+              flask_moment_render_all();
+            }
+          });
+        }
+      }
+      document.addEventListener('DOMContentLoaded', initialize_popovers);
+    </script>
+</html>
